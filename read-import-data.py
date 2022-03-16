@@ -16,6 +16,8 @@ def sendDataToServer(file_name, url_to_save):
 
     #macAddr 0,vendor 1,SSID 2,Security 3,Privacy 4,Channel 5,Frequency 6,Signal Strength 7,Strongest Signal Strength 8,Bandwidth 9,Last Seen 10,First Seen 11,GPS Valid,Latitude,Longitude,Altitude,Speed,Strongest GPS Valid,Strongest Latitude,Strongest Longitude,Strongest Altitude,Strongest Speed
 
+    data_list = []
+
     #Saving information from listening file to an object called data
     for line in f_wifi:
         line_array = line.split(',')
@@ -29,8 +31,13 @@ def sendDataToServer(file_name, url_to_save):
             "Last_Seen": line_array[10],
             "First_Seen": line_array[11],
         }
-    
-    r = requests.post(url_to_save, json=data)
+        
+        data_list.append(data)
+
+    #print(data_list)
+
+    r = requests.post(url_to_save, json=data_list)
+    print(r.json())
         
 
 
