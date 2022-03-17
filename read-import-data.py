@@ -27,7 +27,7 @@ def readWifiFile(file_name):
             "MAC_Address": hash(line_array[0]),
             "First_Seen": line_array[1],
             "Last_Seen": line_array[2],
-            "Signal_Strength": line_array[8],
+            "Signal_Strength": int(line_array[8]),
             "ESSID": line_array[13],
         }
         #BSSID 0, First time seen 1, Last time seen 2, channel 3, Speed 4, Privacy 5, Cipher 6, Authentication 7, Power 8, # beacons 9, # IV 10, LAN IP 11, ID-length 12, ESSID 13, Key 14 
@@ -46,7 +46,7 @@ def readWifiFile(file_name):
             "MAC_Address": hash(line_array[0]),
             "First_Seen": line_array[1],
             "Last_Seen": line_array[2],
-            "Signal_Strength": line_array[3],
+            "Signal_Strength": int(line_array[3]),
             "BSSID": hash(line_array[5]),
             "Probed_ESSID": line_array[6]
         }
