@@ -4,6 +4,7 @@ import json
 import requests
 import time
 import csv
+import hashlib
 
 def readWifiFile(file_name):
 
@@ -30,22 +31,22 @@ def readWifiFile(file_name):
                 if line[5] == ' (not associated) ':
                     BSSID = 0
                 else:
-                    BSSID =  hash(line[5])
+                    BSSID =  hashlib.md5(line[5].encode()).hexdigest()
                 data = {
-                    "MAC_Address": hash(line[0]),
+                    "MAC_Address": hashlib.md5(line[0].encode()).hexdigest(),
                     "First_Seen": line[1],
                     "Last_Seen": line[2],
-                    "Signal_Strength": int(line[3]),
+                    "Signal_Strength": line[3],
                     "BSSID": BSSID,
                     "Probed_ESSID": line[6],
                     "Is_AP": False
                 }
             else:
                 data = {
-                    "MAC_Address": hash(line[0]),
+                    "MAC_Address": hashlib.md5(line[0].encode()).hexdigest(),
                     "First_Seen": line[1],
                     "Last_Seen": line[2],
-                    "Signal_Strength": int(line[8]),
+                    "Signal_Strength": line[8],
                     "ESSID": line[13],
                     "Is_AP": True
                 }
@@ -63,10 +64,10 @@ def readBluetoothFile(file_name):
         next(lines) #Skipping header
         for line in lines:
             data = {
-                "MAC_Address": hash(line[1]),
+                "MAC_Address": hashlib.md5(line[1].encode()).hexdigest(),
                 "Name": line[2],
                 "Company": line[3],
-                "RSSI_value": line[6],
+                "RSSI": line[6],
                 "Last_Seen": line[10]
             }
             data_list.append(data)
