@@ -27,12 +27,16 @@ def readWifiFile(file_name):
                 skip_next_row = True
                 continue
             if second_half:
+                if line[5] == ' (not associated) ':
+                    BSSID = 0
+                else:
+                    BSSID =  hash(line[5])
                 data = {
                     "MAC_Address": hash(line[0]),
                     "First_Seen": line[1],
                     "Last_Seen": line[2],
                     "Signal_Strength": int(line[3]),
-                    "BSSID": hash(line[5]),
+                    "BSSID": BSSID,
                     "Probed_ESSID": line[6],
                     "Is_AP": False
                 }
