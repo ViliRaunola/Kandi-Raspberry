@@ -52,12 +52,45 @@ def readWifiFile(file_name):
         data_list.append(data)
     
     return data_list
-       
-def sendDataToServer(file_name, url_to_save, timer):
+
+def readBluetoothFile(file_name):
+    #Open the file for reading
+    f_bluetooth = open(file_name, 'r')
+
+    #Reading the header off
+    next(f_bluetooth)
+
+    data_list = []
+
+    #uuid 0,Address 1,Name 2,Company 3,Manufacturer 4,Type 5,RSSI 6,TX Power 7,Strongest RSSI 8,Est Range (m) 9,Last Seen 10,GPS Valid 11,Latitude,Longitude,Altitude,Speed,Strongest GPS Valid,Strongest Latitude,Strongest Longitude,Strongest Altitude,Strongest Speed
+
+    for line in f_bluetooth:
+        if line == '':
+            break
+        line_array = line.split(',')
+        data = {
+            "MAC_address": line_array[1],
+            "Name": line_array[2],
+            "Company": line_array[3],
+            "RSSI": line_array[6],
+            "Last_Seen": line_array[10]
+        }
+        data_list.append(data)
+    
+    return data_list
+
+
+
+def sendDataToServer(file_name_wifi, file_name_bluetooth, url_to_save, timer):
     
     while True:
         try:
-            data_list = readWifiFile(file_name)
+            data_list_wifi = readWifiFile(file_name_wifi)
+            data_list_bluetooth = readBluetoothFile(file_name_bluetooth)
+            data_list = {
+                "wifi": data_list_wifi,
+                "bluetooth": data_list_bluetooth,
+            }
             r = requests.post(url_to_save, json=data_list)
             r = r.json()
             if r.get('success'):
@@ -75,7 +108,8 @@ def sendDataToServer(file_name, url_to_save, timer):
 def main(argv):
 
     url_to_save = 'http://localhost:1234/api/save'
-    file_name = "testi-01.csv"
+    file_name_wifi = "testi-01.csv"
+    file_name_bluetooth = 'raspberrypi_bt_2022-03-16_14_16_45.csv'
     timer_for_reading_sending = 5
 
     #TODO Lisää ohjelmien käynnistys!!!
@@ -86,8 +120,12 @@ def main(argv):
             sys.exit(0)
         if arg == "-web":
             print("Sending to web")
-            sendDataToServer(file_name, url_to_save, timer_for_reading_sending)
+            sendDataToServer(file_name_wifi, file_name_bluetooth, url_to_save, timer_for_reading_sending)
 
 
 if __name__ == "__main__":
     main(sys.argv)
+
+
+
+#############################EOF####################################
