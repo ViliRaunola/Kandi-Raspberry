@@ -3,83 +3,70 @@ import sys
 import json
 import requests
 import time
-
-
+import csv
 
 def readWifiFile(file_name):
-    #Open the file for reading
-    f_wifi = open(file_name, 'r')
-    
-    #Reading the header & first line off
-    next(f_wifi)
-    next(f_wifi)
+
+    second_half = False
+    skip_next_row = False
 
     data_list = []
 
-    #First half of the file, containing APs   
-    for line in f_wifi:
-        line = line.replace('\n', '').replace('\t', '')
-        if line == '':
-            break
-        line_array = line.split(',')
-        #Station MAC 0, First time seen 1, Last time seen 2, Power 3, # packets 4, BSSID 5, Probed ESSIDs 6
-        data = {
-            "MAC_Address": hash(line_array[0]),
-            "First_Seen": line_array[1],
-            "Last_Seen": line_array[2],
-            "Signal_Strength": int(line_array[8]),
-            "ESSID": line_array[13],
-            "Is_AP": True
-        }
-        #BSSID 0, First time seen 1, Last time seen 2, channel 3, Speed 4, Privacy 5, Cipher 6, Authentication 7, Power 8, # beacons 9, # IV 10, LAN IP 11, ID-length 12, ESSID 13, Key 14 
-        data_list.append(data)
-    
-    #Reading the header off
-    next(f_wifi)
+    with open(file_name, 'r') as f_wifi:
+        lines = csv.reader(f_wifi)
+        #Skipping header and first empty rows
+        next(lines)
+        next(lines)
+        for line in lines:
+            if skip_next_row:
+                skip_next_row = False
+                continue
+            #After the empty row, clients are listed. Need to skip the header row so skip_next_row is set to True
+            if len(line) == 0:
+                second_half = True
+                skip_next_row = True
+                continue
+            if second_half:
+                data = {
+                    "MAC_Address": hash(line[0]),
+                    "First_Seen": line[1],
+                    "Last_Seen": line[2],
+                    "Signal_Strength": int(line[3]),
+                    "BSSID": hash(line[5]),
+                    "Probed_ESSID": line[6],
+                    "Is_AP": False
+                }
+            else:
+                data = {
+                    "MAC_Address": hash(line[0]),
+                    "First_Seen": line[1],
+                    "Last_Seen": line[2],
+                    "Signal_Strength": int(line[8]),
+                    "ESSID": line[13],
+                    "Is_AP": True
+                }
+            data_list.append(data)
 
-    #Second half of the file, containing clients
-    for line in f_wifi: 
-        line = line.replace('\n', '').replace('\t', '')
-        if line == '':
-            break
-        line_array = line.split(',')
-        data = {
-            "MAC_Address": hash(line_array[0]),
-            "First_Seen": line_array[1],
-            "Last_Seen": line_array[2],
-            "Signal_Strength": int(line_array[3]),
-            "BSSID": hash(line_array[5]),
-            "Probed_ESSID": line_array[6]
-        }
-        data_list.append(data)
-    
     return data_list
 
 
 def readBluetoothFile(file_name):
-    #Open the file for reading
-    f_bluetooth = open(file_name, 'r')
-
-    #Reading the header off
-    next(f_bluetooth)
 
     data_list = []
 
-    #uuid 0,Address 1,Name 2,Company 3,Manufacturer 4,Type 5,RSSI 6,TX Power 7,Strongest RSSI 8,Est Range (m) 9,Last Seen 10,GPS Valid 11,Latitude,Longitude,Altitude,Speed,Strongest GPS Valid,Strongest Latitude,Strongest Longitude,Strongest Altitude,Strongest Speed
+    with open(file_name, 'r') as f_bluetooth:
+        lines = csv.reader(f_bluetooth) 
+        next(lines) #Skipping header
+        for line in lines:
+            data = {
+                "MAC_Address": hash(line[1]),
+                "Name": line[2],
+                "Company": line[3],
+                "RSSI_value": line[6],
+                "Last_Seen": line[10]
+            }
+            data_list.append(data)
 
-    for line in f_bluetooth:
-        if line == '':
-            break
-        line_array = line.split(',')
-        data = {
-            "MAC_address": hash(line_array[1]),
-            "Name": line_array[2],
-            "Company": line_array[3],
-            "RSSI": line_array[6],
-            "Last_Seen": line_array[10]
-        }
-        data_list.append(data)
-    
     return data_list
 
 
