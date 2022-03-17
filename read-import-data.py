@@ -16,6 +16,7 @@ def readWifiFile(file_name):
     with open(file_name, 'r') as f_wifi:
         lines = csv.reader(f_wifi)
         #Skipping header and first empty rows
+        #! TARKKANA, välillä tiedostossa yksi rivi vähemmän alussa....
         next(lines)
         next(lines)
         for line in lines:
