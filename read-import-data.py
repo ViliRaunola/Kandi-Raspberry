@@ -5,6 +5,7 @@ import requests
 import time
 
 
+
 def readWifiFile(file_name):
     #Open the file for reading
     f_wifi = open(file_name, 'r')
@@ -23,7 +24,7 @@ def readWifiFile(file_name):
         line_array = line.split(',')
         #Station MAC 0, First time seen 1, Last time seen 2, Power 3, # packets 4, BSSID 5, Probed ESSIDs 6
         data = {
-            "MAC_Address": line_array[0],
+            "MAC_Address": hash(line_array[0]),
             "First_Seen": line_array[1],
             "Last_Seen": line_array[2],
             "Signal_Strength": line_array[8],
@@ -42,16 +43,17 @@ def readWifiFile(file_name):
             break
         line_array = line.split(',')
         data = {
-            "MAC_Address": line_array[0],
+            "MAC_Address": hash(line_array[0]),
             "First_Seen": line_array[1],
             "Last_Seen": line_array[2],
             "Signal_Strength": line_array[3],
-            "BSSID": line_array[5],
+            "BSSID": hash(line_array[5]),
             "Probed_ESSID": line_array[6]
         }
         data_list.append(data)
     
     return data_list
+
 
 def readBluetoothFile(file_name):
     #Open the file for reading
@@ -69,7 +71,7 @@ def readBluetoothFile(file_name):
             break
         line_array = line.split(',')
         data = {
-            "MAC_address": line_array[1],
+            "MAC_address": hash(line_array[1]),
             "Name": line_array[2],
             "Company": line_array[3],
             "RSSI": line_array[6],
