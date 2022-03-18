@@ -10,6 +10,7 @@ from pymongo import MongoClient
 import subprocess
 import os
 import signal
+import threading
 
 def readWifiFile(file_name):
 
@@ -82,11 +83,11 @@ def readBluetoothFile(file_name):
 
 
 
-def sendDataToServer(file_name_wifi, file_name_bluetooth, timer):
+def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, record_thread):
     
     url_to_save_wifi = 'http://localhost:1234/api/save/wifi'  #https://sheltered-lake-40542.herokuapp.com/api/save/wifi
     url_to_save_bt = 'http://localhost:1234/api/save/bt'  #https://sheltered-lake-40542.herokuapp.com/api/save/bt
-
+    time.sleep(2)
     while True:
         try:
             data_list_wifi = readWifiFile(file_name_wifi)
@@ -116,11 +117,12 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, timer):
             time.sleep(timer)
 
         except KeyboardInterrupt:
+            record_thread.join()
             print('Shutting down...')
             break
         
 
-def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer):
+def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer, record_thread):
     client = MongoClient(cluster_address)
     db = client['kandiserveri']
 
@@ -152,20 +154,21 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer)
             
             time.sleep(timer)
         except KeyboardInterrupt:
+            record_thread.join()
             print('Shutting down...')
             break
 
 #TODO Add this source to somewhere: https://alexandra-zaharia.github.io/posts/kill-subprocess-and-its-children-on-timeout-python/
 def startRecordings():
     record_time = 10
-    cmd_sparrow = ['sudo python3 ./sparrowwifiagent.py', '--recordinterface wlan0']
-    cmd_airodump = ['sudo airodump-ng', '-w ../Desktop/recordings/testi', 'wlan1']
+    cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', 'wlan0']
+    cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/Desktop/recordings/testi', 'wlan1']
 
     try:
-        process_sparrow = subprocess.Popen(cmd_sparrow, start_new_session=True)
+        process_sparrow = subprocess.Popen(cmd_sparrow, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         process_sparrow.wait(timeout=record_time)
 
-        process_airodump = subprocess.Popen(cmd_airodump, start_new_session=True)
+        process_airodump = subprocess.Popen(cmd_airodump, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         process_airodump.wait(timeout=record_time)
     except subprocess.TimeoutExpired:
         os.killpg(os.getpgid(process_sparrow), signal.SIGTERM)
@@ -176,8 +179,8 @@ def startRecordings():
 
 def main(argv):
 
-    file_name_wifi = "testi-01.csv"                 #./recordings/testi-01.csv
-    file_name_bluetooth = 'Bluetooth_recording.csv'  #./recordings/Bluetooth_recording.csv
+    file_name_wifi = "testi-01.csv"                 #../Desktop/recordings/testi-01.csv
+    file_name_bluetooth = 'Bluetooth_recording.csv'  #../Desktop/recordings/Bluetooth_recording.csv
     timer_for_reading_sending = 5
     cluster_address = 'mongodb://localhost:27017'
 
@@ -186,13 +189,17 @@ def main(argv):
             print("Apua on tulossa")
             sys.exit(0)
         if arg == "-web":
-            startRecordings()
+            record_thread = threading.Thread(target=startRecordings)
+            record_thread.setDaemon(True)
+            record_thread.start()
             print("Sending to web... (ctr + c, to stop)")
-            sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
+            sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending, record_thread)
         if arg == "-local":
-            startRecordings()
+            record_thread = threading.Thread(target=startRecordings)
+            record_thread.setDaemon(True)
+            record_thread.start()
             print("Saving to local database... (ctr + c, to stop)")
-            saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
+            saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending, record_thread)
 
 
 if __name__ == "__main__":
