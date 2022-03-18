@@ -85,8 +85,8 @@ def readBluetoothFile(file_name):
 
 def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, record_thread):
     
-    url_to_save_wifi = 'http://localhost:1234/api/save/wifi'  #https://sheltered-lake-40542.herokuapp.com/api/save/wifi
-    url_to_save_bt = 'http://localhost:1234/api/save/bt'  #https://sheltered-lake-40542.herokuapp.com/api/save/bt
+    url_to_save_wifi = 'https://sheltered-lake-40542.herokuapp.com/api/save/wifi'  #https://sheltered-lake-40542.herokuapp.com/api/save/wifi
+    url_to_save_bt = 'https://sheltered-lake-40542.herokuapp.com/api/save/bt'  #https://sheltered-lake-40542.herokuapp.com/api/save/bt
     time.sleep(2)
     while True:
         try:
@@ -161,14 +161,15 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer,
 #TODO Add this source to somewhere: https://alexandra-zaharia.github.io/posts/kill-subprocess-and-its-children-on-timeout-python/
 def startRecordings():
     record_time = 10
-    cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', 'wlan0']
-    cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/Desktop/recordings/testi', 'wlan1']
+    cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', 'wlan1']
+    cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', 'wlan1']
+
+    print('started recording')
 
     try:
         process_sparrow = subprocess.Popen(cmd_sparrow, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-        process_sparrow.wait(timeout=record_time)
-
         process_airodump = subprocess.Popen(cmd_airodump, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        process_sparrow.wait(timeout=record_time)
         process_airodump.wait(timeout=record_time)
     except subprocess.TimeoutExpired:
         os.killpg(os.getpgid(process_sparrow), signal.SIGTERM)
@@ -179,27 +180,31 @@ def startRecordings():
 
 def main(argv):
 
-    file_name_wifi = "testi-01.csv"                 #../Desktop/recordings/testi-01.csv
-    file_name_bluetooth = 'Bluetooth_recording.csv'  #../Desktop/recordings/Bluetooth_recording.csv
+    file_name_wifi = "/home/pi/Desktop/recordings/testi-01.csv"                 #../Desktop/recordings/testi-01.csv
+    file_name_bluetooth = '/home/pi/Desktop/recordings/Bluetooth_recording.csv'  #../Desktop/recordings/Bluetooth_recording.csv
     timer_for_reading_sending = 5
     cluster_address = 'mongodb://localhost:27017'
 
-    for arg in argv:
-        if arg == "-help":
-            print("Apua on tulossa")
-            sys.exit(0)
-        if arg == "-web":
-            record_thread = threading.Thread(target=startRecordings)
-            record_thread.setDaemon(True)
-            record_thread.start()
-            print("Sending to web... (ctr + c, to stop)")
-            sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending, record_thread)
-        if arg == "-local":
-            record_thread = threading.Thread(target=startRecordings)
-            record_thread.setDaemon(True)
-            record_thread.start()
-            print("Saving to local database... (ctr + c, to stop)")
-            saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending, record_thread)
+    try:
+        for arg in argv:
+            if arg == "-help":
+                print("Apua on tulossa")
+                sys.exit(0)
+            if arg == "-web":
+                record_thread = threading.Thread(target=startRecordings)
+                record_thread.setDaemon(True)
+                record_thread.start()
+                print("Sending to web... (ctr + c, to stop)")
+                sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending, record_thread)
+            if arg == "-local":
+                record_thread = threading.Thread(target=startRecordings)
+                record_thread.setDaemon(True)
+                record_thread.start()
+                print("Saving to local database... (ctr + c, to stop)")
+                saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending, record_thread)
+    except:
+        record_thread.join()
+        print('Error has occured')
 
 
 if __name__ == "__main__":
