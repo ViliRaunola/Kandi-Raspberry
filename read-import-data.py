@@ -92,9 +92,9 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, url_to_save, timer):
             r = requests.post(url_to_save, json=data_list)
             r = r.json()
             if r.get('success'):
-                print('Data sent to server.')
+                print('Server saved the data.')
             else:
-                print('Sending the data failed.')
+                print('Saving the data on server failed.')
             time.sleep(timer)
         except KeyboardInterrupt:
             print('Shutting down...')
@@ -153,10 +153,10 @@ def main(argv):
             print("Apua on tulossa")
             sys.exit(0)
         if arg == "-web":
-            print("Sending to web")
+            print("Sending to web... (ctr + c, to stop)")
             sendDataToServer(file_name_wifi, file_name_bluetooth, url_to_save, timer_for_reading_sending)
         if arg == "-local":
-            print("Saving to local database")
+            print("Saving to local database... (ctr + c, to stop)")
             saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
 
 
