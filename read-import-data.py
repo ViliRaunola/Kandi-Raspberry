@@ -5,6 +5,8 @@ import requests
 import time
 import csv
 import hashlib
+import pymongo
+from pymongo import MongoClient
 
 def readWifiFile(file_name):
 
@@ -17,7 +19,7 @@ def readWifiFile(file_name):
         lines = csv.reader(f_wifi)
         #Skipping header and first empty rows
         #! TARKKANA, välillä tiedostossa yksi rivi vähemmän alussa....
-        next(lines)
+        #next(lines)
         next(lines)
         for line in lines:
             if skip_next_row:
@@ -99,6 +101,40 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, url_to_save, timer):
             break
         
 
+def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer):
+    client = MongoClient(cluster_address)
+    db = client['kandiserveri']
+
+    wifi_collection = db['wifis']
+    bluetooth_collection = db['bluetooths']
+
+    while True:
+        try:
+            data_list_wifi = readWifiFile(file_name_wifi)
+            data_list_bluetooth = readBluetoothFile(file_name_bluetooth)
+
+            for data in data_list_wifi:
+                wifi_collection.find_one_and_update({'MAC_Address': data.get('MAC_Address')}, {'$set': data}, upsert=True)
+            
+            for data in data_list_bluetooth:
+                found = bluetooth_collection.find_one({'MAC_Address': data.get('MAC_Address')})
+                if found != None:
+                    bluetooth_collection.update_one({'MAC_Address': data.get('MAC_Address')}, {'$set': {'Last_Seen': data.get('Last_Seen'), 'RSSI': data.get('RSSI')}})
+                else:
+                    bluetooth_collection.insert_one({
+                        "MAC_Address": data.get('MAC_Address'),
+                        "Name": data.get('Name'),
+                        "Company": data.get('Company'),
+                        "RSSI": data.get('RSSI'),
+                        "Last_Seen": data.get('Last_Seen'),
+                        "First_Seen": data.get('Last_Seen'),
+                    })
+
+            
+            time.sleep(timer)
+        except KeyboardInterrupt:
+            print('Shutting down...')
+            break
 
 
 def main(argv):
@@ -107,6 +143,8 @@ def main(argv):
     file_name_wifi = "testi-01.csv"
     file_name_bluetooth = 'raspberrypi_bt_2022-03-16_14_16_45.csv'
     timer_for_reading_sending = 5
+    cluster_address = 'mongodb://localhost:27017'
+
 
     #TODO Lisää ohjelmien käynnistys!!!
 
@@ -117,6 +155,9 @@ def main(argv):
         if arg == "-web":
             print("Sending to web")
             sendDataToServer(file_name_wifi, file_name_bluetooth, url_to_save, timer_for_reading_sending)
+        if arg == "-local":
+            print("Saving to local database")
+            saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
 
 
 if __name__ == "__main__":
