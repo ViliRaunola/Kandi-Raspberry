@@ -8,6 +8,8 @@ import hashlib
 import pymongo
 from pymongo import MongoClient
 import subprocess
+import os
+import signal
 
 def readWifiFile(file_name):
 
@@ -153,28 +155,42 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer)
             print('Shutting down...')
             break
 
-# def startRecordings():
-#     subprocess.run([])
+#TODO Add this source to somewhere: https://alexandra-zaharia.github.io/posts/kill-subprocess-and-its-children-on-timeout-python/
+def startRecordings():
+    record_time = 10
+    cmd_sparrow = ['sudo python3 ./sparrowwifiagent.py', '--recordinterface wlan0']
+    cmd_airodump = ['sudo airodump-ng', '-w ../Desktop/recordings/testi', 'wlan1']
+
+    try:
+        process_sparrow = subprocess.Popen(cmd_sparrow, start_new_session=True)
+        process_sparrow.wait(timeout=record_time)
+
+        process_airodump = subprocess.Popen(cmd_airodump, start_new_session=True)
+        process_airodump.wait(timeout=record_time)
+    except subprocess.TimeoutExpired:
+        os.killpg(os.getpgid(process_sparrow), signal.SIGTERM)
+        os.killpg(os.getpgid(process_airodump), signal.SIGTERM)
+        print('Recording processes have been KILLED!')
+
+
 
 def main(argv):
 
-    
     file_name_wifi = "testi-01.csv"                 #./recordings/testi-01.csv
     file_name_bluetooth = 'Bluetooth_recording.csv'  #./recordings/Bluetooth_recording.csv
     timer_for_reading_sending = 5
     cluster_address = 'mongodb://localhost:27017'
-
-
-    #TODO Lisää ohjelmien käynnistys!!!
 
     for arg in argv:
         if arg == "-help":
             print("Apua on tulossa")
             sys.exit(0)
         if arg == "-web":
+            startRecordings()
             print("Sending to web... (ctr + c, to stop)")
             sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
         if arg == "-local":
+            startRecordings()
             print("Saving to local database... (ctr + c, to stop)")
             saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
 
