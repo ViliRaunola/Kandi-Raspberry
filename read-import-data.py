@@ -7,6 +7,7 @@ import csv
 import hashlib
 import pymongo
 from pymongo import MongoClient
+import subprocess
 
 def readWifiFile(file_name):
 
@@ -19,7 +20,7 @@ def readWifiFile(file_name):
         lines = csv.reader(f_wifi)
         #Skipping header and first empty rows
         #! TARKKANA, välillä tiedostossa yksi rivi vähemmän alussa....
-        #next(lines)
+        next(lines)
         next(lines)
         for line in lines:
             if skip_next_row:
@@ -85,16 +86,21 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, url_to_save, timer):
         try:
             data_list_wifi = readWifiFile(file_name_wifi)
             data_list_bluetooth = readBluetoothFile(file_name_bluetooth)
-            data_list = {
-                "wifi": data_list_wifi,
-                "bluetooth": data_list_bluetooth,
-            }
-            r = requests.post(url_to_save, json=data_list)
-            r = r.json()
-            if r.get('success'):
-                print('Server saved the data.')
+            r_wifi = requests.post(url_to_save, json={"wifi": data_list_wifi})
+            r_wifi = r_wifi.json()
+
+            r_bt = requests.post(url_to_save, json={"bluetooth": data_list_bluetooth})
+            r_bt = r_bt.json()
+
+            if r_wifi.get('success'):
+                print('Server saved wifi to the database.')
             else:
-                print('Saving the data on server failed.')
+                print('Saving the wifi data on server failed.')
+
+            if r_bt.get('success'):
+                print('Server saved bt to the database.')
+            else:
+                print('Saving the bt data on server failed.')
             time.sleep(timer)
         except KeyboardInterrupt:
             print('Shutting down...')
@@ -136,12 +142,14 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer)
             print('Shutting down...')
             break
 
+# def startRecordings():
+#     subprocess.run([])
 
 def main(argv):
 
-    url_to_save = 'http://localhost:1234/api/save'
-    file_name_wifi = "testi-01.csv"
-    file_name_bluetooth = 'raspberrypi_bt_2022-03-16_14_16_45.csv'
+    url_to_save = 'http://localhost:1234/api/save'  #https://sheltered-lake-40542.herokuapp.com/api/save
+    file_name_wifi = "testi-01.csv"                 #./recordings/testi-01.csv
+    file_name_bluetooth = 'Bluetooth_recording.csv'  #./recordings/Bluetooth_recording.csv
     timer_for_reading_sending = 5
     cluster_address = 'mongodb://localhost:27017'
 
