@@ -80,28 +80,39 @@ def readBluetoothFile(file_name):
 
 
 
-def sendDataToServer(file_name_wifi, file_name_bluetooth, url_to_save, timer):
+def sendDataToServer(file_name_wifi, file_name_bluetooth, timer):
     
+    url_to_save_wifi = 'http://localhost:1234/api/save/wifi'  #https://sheltered-lake-40542.herokuapp.com/api/save/wifi
+    url_to_save_bt = 'http://localhost:1234/api/save/bt'  #https://sheltered-lake-40542.herokuapp.com/api/save/bt
+
     while True:
         try:
             data_list_wifi = readWifiFile(file_name_wifi)
             data_list_bluetooth = readBluetoothFile(file_name_bluetooth)
-            r_wifi = requests.post(url_to_save, json={"wifi": data_list_wifi})
-            r_wifi = r_wifi.json()
 
-            r_bt = requests.post(url_to_save, json={"bluetooth": data_list_bluetooth})
-            r_bt = r_bt.json()
+            r_wifi = requests.post(url_to_save_wifi, json={"wifi": data_list_wifi})
+            try:
+                r_wifi = r_wifi.json()
+            except:
+                print('No response from server')
 
             if r_wifi.get('success'):
                 print('Server saved wifi to the database.')
             else:
                 print('Saving the wifi data on server failed.')
 
+            r_bt = requests.post(url_to_save_bt, json={"bluetooth": data_list_bluetooth})
+            try: 
+                r_bt = r_bt.json()
+            except:
+                print('No response from server')
             if r_bt.get('success'):
                 print('Server saved bt to the database.')
             else:
                 print('Saving the bt data on server failed.')
+            
             time.sleep(timer)
+
         except KeyboardInterrupt:
             print('Shutting down...')
             break
@@ -147,7 +158,7 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer)
 
 def main(argv):
 
-    url_to_save = 'http://localhost:1234/api/save'  #https://sheltered-lake-40542.herokuapp.com/api/save
+    
     file_name_wifi = "testi-01.csv"                 #./recordings/testi-01.csv
     file_name_bluetooth = 'Bluetooth_recording.csv'  #./recordings/Bluetooth_recording.csv
     timer_for_reading_sending = 5
@@ -162,7 +173,7 @@ def main(argv):
             sys.exit(0)
         if arg == "-web":
             print("Sending to web... (ctr + c, to stop)")
-            sendDataToServer(file_name_wifi, file_name_bluetooth, url_to_save, timer_for_reading_sending)
+            sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
         if arg == "-local":
             print("Saving to local database... (ctr + c, to stop)")
             saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
