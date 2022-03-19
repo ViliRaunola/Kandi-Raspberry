@@ -108,7 +108,7 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, url_to_save_wif
     while True:
         if (os.path.exists(file_name_wifi) & os.path.exists(file_name_bluetooth)):
             if((os.stat(file_name_wifi).st_size > 100) & (os.stat(file_name_bluetooth).st_size > 100)):
-                print("Sending to web... (ctr + c, to stop)")
+                print("Sending to web... (ctrl + c, to stop)")
                 break
             else:
                 print("Recording files don't have content yet")
@@ -182,7 +182,7 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer)
     while True:
         if (os.path.exists(file_name_wifi) & os.path.exists(file_name_bluetooth)):
             if((os.stat(file_name_wifi).st_size > 100) & (os.stat(file_name_bluetooth).st_size > 100)):
-                print("Saving to local database... (ctr + c, to stop)")
+                print("Saving to local database... (ctrl + c, to stop)")
                 break
             else:
                 print("Recording files don't have content yet")
