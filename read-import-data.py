@@ -229,7 +229,7 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer)
             os.killpg(os.getpgid(process_sparrow.pid), signal.SIGTERM)
             exit(1)
 
-
+#Exports the local database to the web server
 def exportLocalDatabaseToWeb(cluster_address, url_to_save_wifi, url_to_save_bt):
     data_list_wifi = []
     data_list_bluetooth = []
