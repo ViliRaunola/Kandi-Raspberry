@@ -306,22 +306,22 @@ def main(argv):
     url_to_save_wifi = 'https://sheltered-lake-40542.herokuapp.com/api/save/wifi'  #https://sheltered-lake-40542.herokuapp.com/api/save/wifi
     url_to_save_bt = 'https://sheltered-lake-40542.herokuapp.com/api/save/bt'  #https://sheltered-lake-40542.herokuapp.com/api/save/bt
 
-    #try:
-    for arg in argv:
-        if arg == "-help":
-            print("Apua on tulossa")
-            sys.exit(0)
-        if arg == "-web":
-            sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending, url_to_save_wifi, url_to_save_bt)
-            break
-        if arg == "-local":       
-            saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
-            break
-        if arg == "-export":
-            exportLocalDatabaseToWeb(cluster_address, url_to_save_wifi, url_to_save_bt)
-            break
-    # except:
-    #     print('Error has occured in main')
+    try:
+        for arg in argv:
+            if arg == "-help":
+                print("Apua on tulossa")
+                sys.exit(0)
+            if arg == "-web":
+                sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending, url_to_save_wifi, url_to_save_bt)
+                break
+            if arg == "-local":       
+                saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
+                break
+            if arg == "-export":
+                exportLocalDatabaseToWeb(cluster_address, url_to_save_wifi, url_to_save_bt)
+                break
+    except:
+        print('Error has occured in main')
 
 
 if __name__ == "__main__":
