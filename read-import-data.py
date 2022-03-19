@@ -88,19 +88,38 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, timer):
     url_to_save_wifi = 'https://sheltered-lake-40542.herokuapp.com/api/save/wifi'  #https://sheltered-lake-40542.herokuapp.com/api/save/wifi
     url_to_save_bt = 'https://sheltered-lake-40542.herokuapp.com/api/save/bt'  #https://sheltered-lake-40542.herokuapp.com/api/save/bt
 
-    cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', 'wlan1']
-    cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', 'wlan1']
+    wlan_airodump = input('Which wlan interface to use for airodump (monitormode)?: ')
+    wlan_sparrow = input("Which wlan interface to use for sparrow (Pi's own)?: ")
 
+    cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
+    cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', wlan_sparrow]
 
+    try:
+        print('started recording bt')
+        process_sparrow = subprocess.Popen(cmd_sparrow, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        print('started recording wifi')
+        process_airodump = subprocess.Popen(cmd_airodump, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    except:
+        print('Opening subprocesses failed')
+        os.killpg(os.getpgid(process_airodump.pid), signal.SIGTERM)
+        os.killpg(os.getpgid(process_sparrow.pid), signal.SIGTERM)
+        sys.exit(1)
 
-    print('started recording wifi')
-    process_airodump = subprocess.Popen(cmd_airodump, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-    print('started recording bt')
-    process_sparrow = subprocess.Popen(cmd_sparrow, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-
-
-    time.sleep(5)
-    print("Sending to web... (ctr + c, to stop)")
+    
+    
+    #Waiting till the recording files are created
+    while True:
+        if (os.path.exists(file_name_wifi) & os.path.exists(file_name_bluetooth)):
+            if((os.stat(file_name_wifi).st_size > 100) & (os.stat(file_name_bluetooth).st_size > 100)):
+                print("Sending to web... (ctr + c, to stop)")
+                break
+            else:
+                print("Recording files don't have content yet")
+                time.sleep(1)
+        else:
+            print('Recording files are not yet created')
+            time.sleep(2)
+    
     while True:
         try:
             data_list_wifi = readWifiFile(file_name_wifi)
@@ -131,18 +150,53 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, timer):
 
         except KeyboardInterrupt:
             print('Shutting down...')
-            os.killpg(os.getpgid(process_airodump), signal.SIGTERM)
-            os.killpg(os.getpgid(process_sparrow), signal.SIGTERM)
+            os.killpg(os.getpgid(process_airodump.pid), signal.SIGTERM)
+            os.killpg(os.getpgid(process_sparrow.pid), signal.SIGTERM)
+            break
+        except:
+            print('Something went wrong')
+            os.killpg(os.getpgid(process_airodump.pid), signal.SIGTERM)
+            os.killpg(os.getpgid(process_sparrow.pid), signal.SIGTERM)
             break
         
 
-def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer, record_thread):
+def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer):
     client = MongoClient(cluster_address)
     db = client['kandiserveri']
 
+    wlan_airodump = input('Which wlan interface to use for airodump (monitormode)?: ')
+    wlan_sparrow = input("Which wlan interface to use for sparrow (Pi's own)?: ")
+
+    cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
+    cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', wlan_sparrow]
+
+    try:
+        print('started recording bt')
+        process_sparrow = subprocess.Popen(cmd_sparrow, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        print('started recording wifi')
+        process_airodump = subprocess.Popen(cmd_airodump, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    except:
+        print('Opening subprocesses failed')
+        os.killpg(os.getpgid(process_airodump.pid), signal.SIGTERM)
+        os.killpg(os.getpgid(process_sparrow.pid), signal.SIGTERM)
+        sys.exit(1)
+    
+    #Waiting till the recording files are created
+    while True:
+        if (os.path.exists(file_name_wifi) & os.path.exists(file_name_bluetooth)):
+            if((os.stat(file_name_wifi).st_size > 100) & (os.stat(file_name_bluetooth).st_size > 100)):
+                print("Saving to local database... (ctr + c, to stop)")
+                break
+            else:
+                print("Recording files don't have content yet")
+                time.sleep(1)
+        else:
+            print('Recording files are not yet created')
+            time.sleep(2)
+
     wifi_collection = db['wifis']
     bluetooth_collection = db['bluetooths']
-    print("Saving to local database... (ctr + c, to stop)")
+    
     while True:
         try:
             data_list_wifi = readWifiFile(file_name_wifi)
@@ -169,32 +223,15 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer,
             time.sleep(timer)
         except KeyboardInterrupt:
             print('Shutting down...')
+            os.killpg(os.getpgid(process_airodump.pid), signal.SIGTERM)
+            os.killpg(os.getpgid(process_sparrow.pid), signal.SIGTERM)
             break
+        except:
+            print('Saving to database failed')
+            os.killpg(os.getpgid(process_airodump.pid), signal.SIGTERM)
+            os.killpg(os.getpgid(process_sparrow.pid), signal.SIGTERM)
+            exit(1)
 
-#TODO Add this source to somewhere: https://alexandra-zaharia.github.io/posts/kill-subprocess-and-its-children-on-timeout-python/
-# def startRecordingWifi():
-#     record_time = 20
-#     cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', 'wlan1']
-#     print('started recording wifi')
-#     try:
-#         process_airodump = subprocess.Popen(cmd_airodump, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-#         process_airodump.wait(timeout=record_time)
-#     except subprocess.TimeoutExpired:
-#         print('Shutting down recording')
-#         os.killpg(os.getpgid(process_airodump), signal.SIGTERM)
-    
-
-# def startRecordingBluetooth():
-#     record_time = 20
-#     cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', 'wlan1']
-#     print('started recording bt')
-#     try:
-#         process_sparrow = subprocess.Popen(cmd_sparrow, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-#         #time.sleep(record_time)
-#         process_sparrow.wait(timeout=record_time)
-#     except subprocess.TimeoutExpired:
-#         print('Shutting down recording')
-#         os.killpg(os.getpgid(process_sparrow), signal.SIGTERM)
 
 def main(argv):
 
@@ -209,22 +246,9 @@ def main(argv):
                 print("Apua on tulossa")
                 sys.exit(0)
             if arg == "-web":
-
-                # record_thread_bt = threading.Thread(target=startRecordingBluetooth)
-                # record_thread_bt.setDaemon(True)
-                # record_thread_bt.start()
-
-                # record_thread_wifi = threading.Thread(target=startRecordingWifi)
-                # record_thread_wifi.setDaemon(True)
-                # record_thread_wifi.start()
-
                 sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
                 break
-            if arg == "-local":
-                # record_thread = threading.Thread(target=startRecordings)
-                # record_thread.setDaemon(True)
-                # record_thread.start()
-               
+            if arg == "-local":       
                 saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
                 break
     except:
