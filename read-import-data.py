@@ -251,14 +251,15 @@ def exportLocalDatabaseToWeb(cluster_address, url_to_save_wifi, url_to_save_bt):
     for data in data_list_wifi_mongo:
         data_wifi = {
             'MAC_Address': data['MAC_Address'],
-            'ESSID': data['ESSID'],
             'First_Seen': data['First_Seen'],
             'Is_AP': data['Is_AP'],
             'Last_Seen': data['Last_Seen'],
             'Signal_Strength': data['Signal_Strength'],
         }
         if not data['Is_AP']:
-            data_wifi.append({'Probed_ESSID': data['Probed_ESSID'],})
+            data_wifi.update({'Probed_ESSID': data['Probed_ESSID'],})
+        else:
+            data_wifi.update({'ESSID': data['ESSID'],})
         data_list_wifi.append(data_wifi)
     
     for data in data_list_bluetooth_mongo:
