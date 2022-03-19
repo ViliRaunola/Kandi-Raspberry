@@ -83,11 +83,8 @@ def readBluetoothFile(file_name):
 
 
 
-def sendDataToServer(file_name_wifi, file_name_bluetooth, timer):
+def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, url_to_save_wifi, url_to_save_bt):
     
-    url_to_save_wifi = 'https://sheltered-lake-40542.herokuapp.com/api/save/wifi'  #https://sheltered-lake-40542.herokuapp.com/api/save/wifi
-    url_to_save_bt = 'https://sheltered-lake-40542.herokuapp.com/api/save/bt'  #https://sheltered-lake-40542.herokuapp.com/api/save/bt
-
     wlan_airodump = input('Which wlan interface to use for airodump (monitormode)?: ')
     wlan_sparrow = input("Which wlan interface to use for sparrow (Pi's own)?: ")
 
@@ -233,26 +230,96 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer)
             exit(1)
 
 
+def exportLocalDatabaseToWeb(cluster_address, url_to_save_wifi, url_to_save_bt):
+    data_list_wifi = []
+    data_list_bluetooth = []
+    client = MongoClient(cluster_address)
+    db = client['kandiserveri']
+
+    wifi_collection= db['wifis']
+    bluetooth_collection = db['bluetooths']
+
+
+
+    try:
+        data_list_wifi_mongo  = wifi_collection.find({})
+        data_list_bluetooth_mongo  = bluetooth_collection.find({})
+    except:
+        print('Reading local database failed')
+        exit(1)
+
+    for data in data_list_wifi_mongo:
+        data_wifi = {
+            'MAC_Address': data['MAC_Address'],
+            'ESSID': data['ESSID'],
+            'First_Seen': data['First_Seen'],
+            'Is_AP': data['Is_AP'],
+            'Last_Seen': data['Last_Seen'],
+            'Signal_Strength': data['Signal_Strength'],
+        }
+        if not data['Is_AP']:
+            data_wifi.append({'Probed_ESSID': data['Probed_ESSID'],})
+        data_list_wifi.append(data_wifi)
+    
+    for data in data_list_bluetooth_mongo:
+        data_bt = {
+            'MAC_Address': data['MAC_Address'],
+            'Name': data['Name'],
+            'Company': data['Company'],
+            'RSSI': data['RSSI'],
+            'Last_Seen': data['Last_Seen'],
+            'First_Seen': data['First_Seen'],
+        }
+        data_list_bluetooth.append(data_bt)
+
+    r_wifi = requests.post(url_to_save_wifi, json={"wifi": data_list_wifi})
+    try:
+        r_wifi = r_wifi.json()
+    except:
+        print('No response from server')
+
+    if r_wifi.get('success'):
+        print('Server saved wifi to the database.')
+    else:
+        print('Saving the wifi data on server failed.')
+
+    r_bt = requests.post(url_to_save_bt, json={"bluetooth": data_list_bluetooth})
+    try: 
+        r_bt = r_bt.json()
+    except:
+        print('No response from server')
+    if r_bt.get('success'):
+        print('Server saved bt to the database.')
+    else:
+        print('Saving the bt data on server failed.')
+    
+
+
 def main(argv):
 
     file_name_wifi = "/home/pi/Desktop/recordings/testi-01.csv"                 #../Desktop/recordings/testi-01.csv
     file_name_bluetooth = '/home/pi/Desktop/recordings/Bluetooth_recording.csv'  #../Desktop/recordings/Bluetooth_recording.csv
     timer_for_reading_sending = 5
     cluster_address = 'mongodb://localhost:27017'
+    url_to_save_wifi = 'https://sheltered-lake-40542.herokuapp.com/api/save/wifi'  #https://sheltered-lake-40542.herokuapp.com/api/save/wifi
+    url_to_save_bt = 'https://sheltered-lake-40542.herokuapp.com/api/save/bt'  #https://sheltered-lake-40542.herokuapp.com/api/save/bt
 
-    try:
-        for arg in argv:
-            if arg == "-help":
-                print("Apua on tulossa")
-                sys.exit(0)
-            if arg == "-web":
-                sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
-                break
-            if arg == "-local":       
-                saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
-                break
-    except:
-        print('Error has occured')
+    #try:
+    for arg in argv:
+        if arg == "-help":
+            print("Apua on tulossa")
+            sys.exit(0)
+        if arg == "-web":
+            sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending, url_to_save_wifi, url_to_save_bt)
+            break
+        if arg == "-local":       
+            saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
+            break
+        if arg == "-export":
+            exportLocalDatabaseToWeb(cluster_address, url_to_save_wifi, url_to_save_bt)
+            break
+    # except:
+    #     print('Error has occured in main')
 
 
 if __name__ == "__main__":
