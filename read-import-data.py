@@ -258,6 +258,7 @@ def exportLocalDatabaseToWeb(cluster_address, url_to_save_wifi, url_to_save_bt):
         }
         if not data['Is_AP']:
             data_wifi.update({'Probed_ESSID': data['Probed_ESSID'],})
+            data_wifi.update({'BSSID': data['BSSID'],})
         else:
             data_wifi.update({'ESSID': data['ESSID'],})
         data_list_wifi.append(data_wifi)
