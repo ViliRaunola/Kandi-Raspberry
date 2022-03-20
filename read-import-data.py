@@ -1,16 +1,12 @@
-from os import read
 import sys
-import json
 import requests
 import time
 import csv
 import hashlib
-import pymongo
 from pymongo import MongoClient
 import subprocess
 import os
 import signal
-import threading
 
 def readWifiFile(file_name):
 
