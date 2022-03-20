@@ -88,11 +88,8 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, url_to_save_wif
     cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
     cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', wlan_sparrow]
 
-    #Clearing the recordings folder before starting the recordings
-    files_in_recordings = glob.glob(path_name_to_recordings + '/*')
-    for file in files_in_recordings:
-        os.remove(file)
-    print('Recordings folder has been emptied')
+    #Clearing the recordings folder before recordings are started
+    clearFolder(path_name_to_recordings)
 
     try:
         print('started recording bt')
@@ -158,7 +155,13 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, url_to_save_wif
             os.killpg(os.getpgid(process_airodump.pid), signal.SIGTERM)
             os.killpg(os.getpgid(process_sparrow.pid), signal.SIGTERM)
             break
-        
+
+#Deletes files inside given folder
+def clearFolder(path_name_to_recordings):
+    files_in_recordings = glob.glob(path_name_to_recordings + '/*')
+    for file in files_in_recordings:
+        os.remove(file)
+    print(path_name_to_recordings + ' folder has been emptied.')
 
 def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer, path_name_to_recordings):
     client = MongoClient(cluster_address)
@@ -170,12 +173,8 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer,
     cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
     cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', wlan_sparrow]
 
-    #Clearing the recordings folder before starting the recordings
-    files_in_recordings = glob.glob(path_name_to_recordings + '/*')
-    for file in files_in_recordings:
-        os.remove(file)
-    print('Recordings folder has been emptied')
-
+    #Clearing the recordings folder before recordings are started
+    clearFolder(path_name_to_recordings)
 
     try:
         print('started recording bt')
