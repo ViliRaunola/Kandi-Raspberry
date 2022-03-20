@@ -200,7 +200,20 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer)
             data_list_bluetooth = readBluetoothFile(file_name_bluetooth)
 
             for data in data_list_wifi:
-                wifi_collection.find_one_and_update({'MAC_Address': data.get('MAC_Address')}, {'$set': data}, upsert=True)
+                found = wifi_collection.find_one({'MAC_Address': data.get('MAC_Address')})
+                if found != None:
+                    wifi_collection.update_one({'MAC_Address': data.get('MAC_Address')}, {'$set': {'Last_Seen': data.get('Last_Seen'), 'Signal_Strength': data.get('Signal_Strength')}})
+                else:
+                    wifi_collection.insert_one({
+                        "MAC_Address": data.get('MAC_Address'),
+                        "First_Seen": data.get('First_Seen'),
+                        "Last_Seen": data.get('Last_Seen'),
+                        "Signal_Strength": data.get('Signal_Strength'),
+                        "ESSID": data.get('ESSID'),
+                        "BSSID": data.get('BSSID'),
+                        "Probed_ESSID": data.get('Probed_ESSID'),
+                        "Is_AP": data.get('Is_AP'),
+                    })
             
             for data in data_list_bluetooth:
                 found = bluetooth_collection.find_one({'MAC_Address': data.get('MAC_Address')})
