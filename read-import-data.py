@@ -7,6 +7,7 @@ from pymongo import MongoClient
 import subprocess
 import os
 import signal
+import glob
 
 def readWifiFile(file_name):
 
@@ -79,13 +80,19 @@ def readBluetoothFile(file_name):
 
 
 
-def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, url_to_save_wifi, url_to_save_bt):
+def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, url_to_save_wifi, url_to_save_bt, path_name_to_recordings):
     
     wlan_airodump = input('Which wlan interface to use for airodump (monitormode)?: ')
     wlan_sparrow = input("Which wlan interface to use for sparrow (Pi's own)?: ")
 
     cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
     cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', wlan_sparrow]
+
+    #Clearing the recordings folder before starting the recordings
+    files_in_recordings = glob.glob(path_name_to_recordings + '/*')
+    for file in files_in_recordings:
+        os.remove(file)
+    print('Recordings folder has been emptied')
 
     try:
         print('started recording bt')
@@ -153,7 +160,7 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, url_to_save_wif
             break
         
 
-def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer):
+def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer, path_name_to_recordings):
     client = MongoClient(cluster_address)
     db = client['kandiserveri']
 
@@ -162,6 +169,13 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer)
 
     cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
     cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', wlan_sparrow]
+
+    #Clearing the recordings folder before starting the recordings
+    files_in_recordings = glob.glob(path_name_to_recordings + '/*')
+    for file in files_in_recordings:
+        os.remove(file)
+    print('Recordings folder has been emptied')
+
 
     try:
         print('started recording bt')
@@ -314,6 +328,7 @@ def main(argv):
     cluster_address = 'mongodb://localhost:27017'
     url_to_save_wifi = 'https://sheltered-lake-40542.herokuapp.com/api/save/wifi'  #https://sheltered-lake-40542.herokuapp.com/api/save/wifi
     url_to_save_bt = 'https://sheltered-lake-40542.herokuapp.com/api/save/bt'  #https://sheltered-lake-40542.herokuapp.com/api/save/bt
+    path_name_to_recordings = '/home/pi/Desktop/recordings'
 
     try:
         for arg in argv:
@@ -321,10 +336,10 @@ def main(argv):
                 print("Apua on tulossa")
                 sys.exit(0)
             if arg == "-web":
-                sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending, url_to_save_wifi, url_to_save_bt)
+                sendDataToServer(file_name_wifi, file_name_bluetooth, timer_for_reading_sending, url_to_save_wifi, url_to_save_bt, path_name_to_recordings)
                 break
             if arg == "-local":       
-                saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending)
+                saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer_for_reading_sending, path_name_to_recordings)
                 break
             if arg == "-export":
                 exportLocalDatabaseToWeb(cluster_address, url_to_save_wifi, url_to_save_bt)
