@@ -8,6 +8,7 @@ import subprocess
 import os
 import signal
 import glob
+from mac_vendor_lookup import MacLookup
 
 def readWifiFile(file_name):
 
@@ -36,6 +37,13 @@ def readWifiFile(file_name):
                     BSSID = 0
                 else:
                     BSSID =  hashlib.md5(line[5].encode()).hexdigest()
+                
+                try:
+                    manuf = MacLookup().lookup(line[0])
+                except:
+                    manuf = ""
+
+
                 data = {
                     "MAC_Address": hashlib.md5(line[0].encode()).hexdigest(),
                     "First_Seen": line[1],
@@ -43,16 +51,24 @@ def readWifiFile(file_name):
                     "Signal_Strength": line[3],
                     "BSSID": BSSID,
                     "Probed_ESSID": line[6],
-                    "Is_AP": False
+                    "Is_AP": False,
+                    "Manufacturer": manuf,
                 }
             else:
+
+                try:
+                    manuf = MacLookup().lookup(line[0])
+                except:
+                    manuf = ""
+
                 data = {
                     "MAC_Address": hashlib.md5(line[0].encode()).hexdigest(),
                     "First_Seen": line[1],
                     "Last_Seen": line[2],
                     "Signal_Strength": line[8],
                     "ESSID": line[13],
-                    "Is_AP": True
+                    "Is_AP": True,
+                    "Manufacturer": manuf,
                 }
             data_list.append(data)
 
@@ -222,6 +238,7 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer,
                         "BSSID": data.get('BSSID'),
                         "Probed_ESSID": data.get('Probed_ESSID'),
                         "Is_AP": data.get('Is_AP'),
+                        "Manufacturer": data.get('Manufacturer')
                     })
             
             for data in data_list_bluetooth:
@@ -277,6 +294,7 @@ def exportLocalDatabaseToWeb(cluster_address, url_to_save_wifi, url_to_save_bt):
             'Is_AP': data['Is_AP'],
             'Last_Seen': data['Last_Seen'],
             'Signal_Strength': data['Signal_Strength'],
+            'Manufacturer': data['Manufacturer'],
         }
         if not data['Is_AP']:
             data_wifi.update({'Probed_ESSID': data['Probed_ESSID'],})
