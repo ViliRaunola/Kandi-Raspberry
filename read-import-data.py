@@ -101,7 +101,7 @@ def sendDataToServer(file_name_wifi, file_name_bluetooth, timer, url_to_save_wif
     wlan_airodump = input('Which wlan interface to use for airodump (monitormode)?: ')
     wlan_sparrow = input("Which wlan interface to use for sparrow (Pi's own)?: ")
 
-    cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
+    cmd_airodump = ['sudo', 'airodump-ng','-f', '150', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
     cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', wlan_sparrow]
 
     #Clearing the recordings folder before recordings are started
@@ -186,7 +186,7 @@ def saveDataLocally(cluster_address, file_name_wifi, file_name_bluetooth, timer,
     wlan_airodump = input('Which wlan interface to use for airodump (monitormode)?: ')
     wlan_sparrow = input("Which wlan interface to use for sparrow (Pi's own)?: ")
 
-    cmd_airodump = ['sudo', 'airodump-ng', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
+    cmd_airodump = ['sudo', 'airodump-ng','-f', '150', '-w', '/home/pi/Desktop/recordings/testi', wlan_airodump]
     cmd_sparrow = ['sudo', 'python3', '/home/pi/sparrow-wifi/sparrowwifiagent.py', '--recordinterface', wlan_sparrow]
 
     #Clearing the recordings folder before recordings are started
