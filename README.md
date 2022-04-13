@@ -9,6 +9,9 @@ Tarkemmat ohjeet Rasperryn konfiguroimiseen löytyvät kandidaatin työstäni.
 Komennot, joilla aloittaa kuuntelu
 ```
 python3 read-import-data.py -web
+```
+tai
+```
 python3 read-import-data.py -local
 ```
 
